@@ -67,8 +67,8 @@ from javax.management import DynamicMBean, ObjectName, \
 # W0622: Redefining builtin __doc__
 
 def tag_decorator(attrname, modifier=None):
-    '''A function to create a decorator which sets an attribute on the decorated
-    function
+    '''A function to create a decorator which sets an attribute on the
+    decorated function
 
     This function returns a decorator which takes a set of arguments, and sets
     these arguments as an attribute on the decorated function, optionally
@@ -640,8 +640,8 @@ class DemoMBean(object):
         self._intValue = intValue
         self._boolValue = boolValue
 
-    # Properties represent attributes on the MBean. They are readable if fget is
-    # implemented, writable if fset is implemented, and have the given doc
+    # Properties represent attributes on the MBean. They are readable if fget
+    # is implemented, writable if fset is implemented, and have the given doc
     # string as description.
 
     # Standard Python properties are considered to be of type 'java.lang.String'
