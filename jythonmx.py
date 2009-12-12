@@ -39,6 +39,7 @@ __docformat__ = 'restructuredtext en'
 
 __all__ = 'returns', 'args', 'TypedProperty', 'MBeanAdapter',
 
+import sys
 import types
 import logging
 import inspect
@@ -723,6 +724,9 @@ class DemoMBean(object):
 
         return (a % b == 0)
 
+    modules = TypedProperty(Array(java.lang.String),
+                            fget=lambda _: sorted(sys.modules.iterkeys()),
+                            doc='List of all loaded modules')
 
 def main():
     '''Expose the demo MBean and wait for termination'''
