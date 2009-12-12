@@ -429,7 +429,7 @@ class MBeanAdapter(DynamicMBean, object):
                                   else self.DEFAULT_PROPERTY_TYPE
 
                 yield MBeanAttributeInfo(name, classname(type_),
-                                         format_docstring(attr.__doc__),
+                                         format_docstring(attr.__doc__ or ''),
                                          callable(attr.fget),
                                          callable(attr.fset), False)
 
@@ -492,14 +492,14 @@ class MBeanAdapter(DynamicMBean, object):
                 # Yield method info for the current method
                 # All methods are ACTIONs for now.
                 yield MBeanOperationInfo(attr.__name__,
-                                         format_docstring(attr.__doc__),
+                                         format_docstring(attr.__doc__ or ''),
                                          tuple(args_()), return_type,
                                          MBeanOperationInfo.ACTION)
 
         # Calculate and store MBeanInfo
         self._beaninfo = MBeanInfo(classname(self._bean.__class__),
                                    format_docstring(
-                                       self._bean.__class__.__doc__),
+                                       self._bean.__class__.__doc__ or ''),
                                    tuple(attributes()), None,
                                    tuple(operations()), None)
 
