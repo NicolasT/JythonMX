@@ -124,6 +124,15 @@ returns.__doc__ = '''
 Define the return type of a method
 '''.strip()
 
+def test_returns():
+    '''Test @returns behaviour'''
+    @returns(java.lang.String)
+    def f(): #pylint: disable-msg=C0111
+        pass
+
+    assert f.__returns__ == java.lang.String #pylint: disable-msg=E1101
+
+
 args = tag_decorator('__args__', lambda *a: tuple(a))
 args.__doc__ = '''
 Define the argument types of a method
@@ -132,17 +141,59 @@ The argument types should be given in the argument order. The type definitions
 can be just a type, or a tuple of a type and a description of the argument.
 '''.strip()
 
+def test_args():
+    '''Test @args behaviour'''
+    #pylint: disable-msg=C0111
+    @args(
+        (java.lang.String, 'Name'),
+        java.lang.Integer,
+    )
+    def f(name, age): #pylint: disable-msg=W0613
+        pass
+
+    #pylint: disable-msg=E1101
+    assert f.__args__ == ((java.lang.String, 'Name'), java.lang.Integer)
+
+
 # An attribute setter generator, similar to operator.attrgetter
 #pylint: disable-msg=E0601
 attrsetter = lambda attr: lambda self, value: setattr(self, attr, value)
 #pylint: enable-msg=E0601
 
+def test_attrsetter():
+    '''Test attrsetter'''
+    class C(object): #pylint: disable-msg=C0111
+        def __init__(self, i): #pylint: disable-msg=C0111
+            self._i = i
+
+        i = property(fget=operator.attrgetter('_i'), fset=attrsetter('_i'))
+
+    c = C(123)
+    assert c.i == 123
+    c.i = 456
+    assert c.i == 456
+    assert c._i == 456 #pylint: disable-msg=W0212
+
+
 # A helper to calculate the fully-qualified name of a class
 classname = lambda cls: '%s.%s' % (cls.__module__, cls.__name__)
+
+def test_classname():
+    '''Test classname'''
+    assert classname(java.lang.String) == 'java.lang.String'
+
 
 # A helper to flatten a docstring in one line
 format_docstring = lambda doc: ' '.join(itertools.imap(lambda s: s.strip(),
                                                    doc.splitlines())).strip()
+
+def test_format_docstring():
+    '''Test docstring to single line conversion'''
+    docstring = '''
+    Abc
+    def
+    '''
+    assert format_docstring(docstring) == 'Abc def'
 
 
 class TypedProperty(property):
@@ -164,6 +215,18 @@ class TypedProperty(property):
 
     type = property(operator.attrgetter('_type'),
                     doc='Type of the property value')
+
+def test_typed_property():
+    '''Test TypedProperty'''
+    getter = operator.attrgetter('_')
+    setter = attrsetter('_')
+
+    class C(object): #pylint: disable-msg=C0111
+        i = TypedProperty(java.lang.String, fget=getter, fset=setter)
+
+    assert C.i.type == java.lang.String
+    assert C.i.fget is getter
+    assert C.i.fset is setter
 
 
 def synchronised(fun):
@@ -189,6 +252,26 @@ def synchronised(fun):
 
     return _wrapped
 
+def test_synchronised():
+    '''Test @synchronised'''
+    import time
+
+    @synchronised
+    def f(): #pylint: disable-msg=C0111
+        time.sleep(1)
+
+    t1 = threading.Thread(target=f)
+    t2 = threading.Thread(target=f)
+
+    start = time.time()
+    t1.start()
+    t2.start()
+    t1.join()
+    t2.join()
+    end = time.time()
+
+    assert 1.9 < (end - start) < 2.5
+
 
 #pylint: disable-msg=E0601
 list_attributes = lambda obj: itertools.imap(
@@ -209,6 +292,23 @@ given object whose name doesn't start with an underscore.
 :return: (name, attribute) pairs of all public attributes on the object
 :rtype: iterable
 '''.strip()
+
+def test_list_attributes():
+    '''Test list_attributes'''
+    class C(object): #pylint: disable-msg=C0111
+        def __init__(self):
+            pass
+
+        def hello(self): #pylint: disable-msg=C0111
+            pass
+
+        def _bye(self): #pylint: disable-msg=C0111
+            pass
+
+        i = property()
+        _j = property()
+
+    assert set(list_attributes(C)) == set((('hello', C.hello), ('i', C.i)))
 
 
 #TODO Use class logger
@@ -235,6 +335,21 @@ def logged(fun):
             raise
 
     return _wrapped
+
+def test_logged():
+    '''Make sure @logged passes through the exception'''
+    raised_exc = Exception('Hello world')
+
+    @logged
+    def f(): #pylint: disable-msg=C0111
+        raise raised_exc
+
+    try:
+        f()
+    except Exception, exc: #pylint: disable-msg=W0703
+        assert exc is raised_exc
+    else:
+        assert False, 'Exception not raised'
 
 
 class MBeanAdapter(DynamicMBean, object):
