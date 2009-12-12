@@ -213,6 +213,15 @@ class TypedProperty(property):
         property.__init__(self, *args_, **kwargs)
         self._type = type_
 
+        # Make sure the local __doc__ attribute is set correctly
+        # 'property' seems to do this, but somehow instances of TypedProperty
+        # still end up with the class docstring as __doc__ attribute value
+        # unless we set it explicitly.
+        if len(args_) == 4:
+            self.__doc__ = args_[3]
+        else:
+            self.__doc__ = kwargs.get('doc', '')
+
     type = property(operator.attrgetter('_type'),
                     doc='Type of the property value')
 
