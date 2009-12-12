@@ -530,6 +530,7 @@ class MBeanAdapter(DynamicMBean, object):
         self._logger.debug('Attribute requested: %s', name)
 
         if not hasattr(self._bean, name):
+            self._logger.exception('Attribute not found')
             raise AttributeNotFoundException('No such attribute: %s' % name)
 
         # Calculate attribute type
@@ -614,6 +615,7 @@ class MBeanAdapter(DynamicMBean, object):
         try:
             fun = getattr(self._bean, name, None)
         except Exception, exc:
+            self._logger.exception('Error retrieving method on bean')
             raise MBeanException(exc)
 
         if not callable(fun):
@@ -629,8 +631,8 @@ class MBeanAdapter(DynamicMBean, object):
             else:
                 return return_type(value)
         except Exception, exc:
+            self._logger.exception('Error executing or coercing return value')
             raise MBeanException(exc)
-
 
 
 class DemoMBean(object):
