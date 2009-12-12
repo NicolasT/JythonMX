@@ -465,8 +465,7 @@ class MBeanAdapter(DynamicMBean, object):
         :param attributes: attributes to set
         :type attributes: iterable
         '''
-        for attribute in attributes:
-            self.setAttribute(self, attribute)
+        map(self.setAttribute, attributes)
 
     @logged
     def invoke(self, name, args_, sig):
