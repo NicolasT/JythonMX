@@ -1,0 +1,21 @@
+JythonMX
+========
+JythonMX is a library to export JMX information from Jython applications.
+
+Note this library will only work in Jython, not using CPython, IronPython or
+any other runtime.
+
+Quickstart
+----------
+As a quick start, see the DemoMBean class and main function at the bottom of
+the jythonmx module.
+
+You can execute the jythonmx module as a script using Jython. Next, launch
+'jconsole', and connect to the Jython process. In the 'MBeans' section, you'll
+find the JythonMX MBean with a 'demo' child. You can inspect the attributes and
+methods exposed by the DemoMBean, call methods, read argument or attribute
+descriptions, change attribute values etc. Take some time to play around ;-)
+
+TODO
+----
+- Documentation

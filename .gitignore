@@ -1,0 +1,7 @@
+*.bak
+*.class
+*.swp
+.DS_Store
+MANIFEST
+build/
+dist/
