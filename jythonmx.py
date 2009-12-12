@@ -56,6 +56,7 @@ from javax.management import DynamicMBean, ObjectName, \
                              AttributeList, Attribute, \
                              AttributeNotFoundException, MBeanException, \
                              ReflectionException
+import jarray
 #pylint: enable-msg=F0401
 
 #pylint: disable-msg=W0142,C0103,R0903,W0141,R0201,W0622
@@ -236,6 +237,46 @@ def test_typed_property():
     assert C.i.type == java.lang.String
     assert C.i.fget is getter
     assert C.i.fset is setter
+
+
+class Array(object):
+    '''Representation of a Java array'''
+    __slots__ = '_type',
+
+    def __init__(self, type_):
+        '''Initialize a new array representation
+
+        :param type_: type contained in the array
+        :type type_: type
+        '''
+        self._type = type_
+
+    def __call__(self, values):
+        '''Coerce the given values into a Java array
+
+        This acts just like the constructor of a normal Java type definition.
+
+        :param values: values to coerce
+        :type values: iterable
+
+        :return: Java array containing all values
+        :rtype: jarray.array
+        '''
+        return jarray.array(tuple(self._type(value) for value in values),
+                            self._type)
+
+    #pylint: disable-msg=W0212
+    __module__ = property(fget=lambda s: s._type.__module__,
+                          doc='Type definition module name')
+    __name__ = property(fget=lambda s: '%s[]' % s._type.__name__,
+                        doc='Array type name')
+
+def test_array():
+    '''Test array type wrapper'''
+    type_ = Array(java.lang.String)
+    assert type_.__module__ == java.lang.String.__module__
+    assert type_.__name__ == '%s[]' % java.lang.String.__name__
+    # TODO Test array coercion
 
 
 def synchronised(fun):
