@@ -37,7 +37,7 @@ __version__ = 0, 0, 1
 __license__ = 'GNU Lesser General Public License version 2.1'
 __docformat__ = 'restructuredtext en'
 
-__all__ = 'returns', 'args', 'TypedProperty', 'MBeanAdapter',
+__all__ = 'returns', 'args', 'TypedProperty', 'MBeanAdapter', 'signal'
 
 import sys
 import types
@@ -56,7 +56,9 @@ from javax.management import DynamicMBean, ObjectName, \
                              MBeanOperationInfo, MBeanParameterInfo, \
                              AttributeList, Attribute, \
                              AttributeNotFoundException, MBeanException, \
-                             ReflectionException
+                             ReflectionException, \
+                             Notification, NotificationBroadcasterSupport, \
+                             MBeanNotificationInfo
 import jarray
 #pylint: enable-msg=F0401
 
@@ -280,6 +282,79 @@ def test_array():
     # TODO Test array coercion
 
 
+class NotificationTrigger(object):
+    '''An MBean notification/signal slot'''
+    __slots__ = '_name', '_sendNotification', '_nextId', '_source',
+
+    def __init__(self, name):
+        self._name = name
+
+        self._sendNotification = None
+        self._nextId = None
+        self._source = None
+
+    def __call__(self, message=None, userData=None):
+        '''Emit notification
+
+        Note: both arguments will be coerced into java.lang.String.
+
+        :param message: notification message
+        :type message: str
+        :param userData: notification userData
+        :type userData: str
+        '''
+        # If not all of these are set, we aren't registered yet. No-op.
+        if not all((self._sendNotification, self._nextId, self._source, )):
+            return
+
+        if not message:
+            notification = Notification(self.name, self._source, self._nextId())
+        else:
+            notification = Notification(self.name, self._source, self._nextId(),
+                                        java.lang.String(message))
+
+        if userData:
+            notification.setUserData(java.lang.String(userData))
+
+        self._sendNotification(notification)
+
+    name = property(operator.attrgetter('_name'), doc='Notification type name')
+
+    def _setSendNotification(self, value):
+        '''Set the callable to use to emit notifications'''
+        if self._sendNotification:
+            raise RuntimeError('Can\'t set sendNotification twice')
+
+        self._sendNotification = value
+
+    sendNotification = property(fset=_setSendNotification,
+                                doc='Setter for function to call when ' \
+                                    'sending notifications')
+
+    def _setNextId(self, value):
+        '''
+        Set the callable to use to retrieve the next notification sequence
+        number
+        '''
+        if self._nextId:
+            raise RuntimeError('Can\'t set nextId twice')
+
+        self._nextId = value
+
+    nextId = property(fset=_setNextId, doc='Setter for the nextId function')
+
+    def _setSource(self, value):
+        '''Set the source of all notifications'''
+        if self._source:
+            raise RuntimeError('Can\'t set source twice')
+
+        self._source = value
+
+    source = property(fset=_setSource, doc='Setter for the notification source')
+
+signal = NotificationTrigger
+
+
 def synchronised(fun):
     '''Decorator to add a lock around a function
 
@@ -403,10 +478,11 @@ def test_logged():
         assert False, 'Exception not raised'
 
 
-class MBeanAdapter(DynamicMBean, object):
+class MBeanAdapter(NotificationBroadcasterSupport, DynamicMBean, object):
     '''An adapter for plain Python classes to act as MBeans in JMX'''
 
-    __slots__ = '_bean', '_registered', '_name', '_beaninfo', '_logger',
+    __slots__ = '_bean', '_registered', '_name', '_currentId', '_beaninfo', \
+                '_notificationinfo', '_logger',
 
     # Default property value type
     DEFAULT_PROPERTY_TYPE = java.lang.String
@@ -419,13 +495,18 @@ class MBeanAdapter(DynamicMBean, object):
         :param bean: instance to expose on JMX
         :type bean: object
         '''
+        NotificationBroadcasterSupport.__init__(self)
+
         self._bean = bean
 
         self._registered = False
         self._name = None
         self._beaninfo = None
+        self._notificationinfo = None
 
         self._logger = logging.getLogger('mbeanadapter')
+
+        self._currentId = 0
 
     # Public API
     @synchronised
@@ -503,6 +584,10 @@ class MBeanAdapter(DynamicMBean, object):
             # List all callable attributes found on the bean type
             for name, attr in filter(lambda (_, a): callable(a),
                                      list_attributes(cls)):
+                # If it's a NotificationTrigger, skip
+                if isinstance(attr, NotificationTrigger):
+                    continue
+
                 # Make sure it's a method
                 if not isinstance(attr, types.MethodType):
                     raise TypeError('MBean methods can\'t be staticmethods')
@@ -564,9 +649,55 @@ class MBeanAdapter(DynamicMBean, object):
                                    format_docstring(
                                        self._bean.__class__.__doc__ or ''),
                                    tuple(attributes()), None,
-                                   tuple(operations()), None)
+                                   tuple(operations()), self.notificationinfo)
 
         return self._beaninfo
+
+    @property
+    @logged
+    @synchronised
+    def notificationinfo(self):
+        '''Calculate the MBeanNotificationInfo of the bean
+
+        :return: MBeanNotificationInfo array describing the notifications
+                 emitted by the MBean
+        :rtype: MBeanNotificationInfo[]
+        '''
+        # Short path
+        if self._notificationinfo:
+            return self._notificationinfo
+
+        def notifications():
+            '''Calculate and list all notifications exposed on the MBean'''
+            cls = self._bean.__class__
+
+            # List all callable attributes found on the bean type
+            for _, attr in filter(
+                    lambda (_, a): isinstance(a, NotificationTrigger),
+                    list_attributes(cls)):
+                attr.sendNotification = self.sendNotification
+                attr.nextId = self._nextId
+                attr.source = self._bean.__class__.__name__
+
+                yield attr.name
+
+        self._logger.debug('Calculating notifications info')
+
+        notificationinfo = MBeanNotificationInfo(tuple(notifications()),
+                                   classname(Notification),
+                                   'Notifications emitted through JythonMX')
+
+        self._notificationinfo = (notificationinfo, )
+        return self._notificationinfo
+
+    @synchronised
+    def _nextId(self):
+        '''
+        Calculate and return a sequence number for notifications sent by the
+        MBean
+        '''
+        self._currentId += 1
+        return self._currentId
 
     # DynamicMBean implementation
     @logged
@@ -697,6 +828,30 @@ class MBeanAdapter(DynamicMBean, object):
             self._logger.exception('Error executing or coercing return value')
             raise MBeanException(exc)
 
+    # NotificationBroadcasterSupport
+    @logged
+    def getNotificationInfo(self):
+        '''Retrieve info of all notifications emitted by the MBean
+
+        :return: MBean notification info
+        :rtype: MBeanNotificationInfo[]
+        '''
+        self._logger.debug('Notification info requested')
+
+        return self.notificationinfo
+
+    @logged
+    def sendNotification(self, notification):
+        '''Emit a notification to all listeners
+
+        :param notification: Notification to emit
+        :type notification: Notification
+        '''
+        self._logger.debug('Emit notification: %s', notification)
+
+        return NotificationBroadcasterSupport.sendNotification(self,
+                                                               notification)
+
 
 class DemoMBean(object):
     '''A demonstration MBean'''
@@ -748,6 +903,17 @@ class DemoMBean(object):
     modules = TypedProperty(Array(java.lang.String),
                             fget=lambda _: sorted(sys.modules.iterkeys()),
                             doc='List of all loaded modules')
+
+    # Notifications
+    test = signal('test')
+    test2 = signal('test2')
+
+    def notifyTest(self):
+        '''A function which emits both test notifications'''
+        self.test('Test succeeded')
+        # User data must be a string, e.g. machine-readable information
+        self.test2('Test really succeeded', 'With user data')
+
 
 def main():
     '''Expose the demo MBean and wait for termination'''
