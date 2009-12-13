@@ -406,7 +406,7 @@ def test_logged():
 class MBeanAdapter(DynamicMBean, object):
     '''An adapter for plain Python classes to act as MBeans in JMX'''
 
-    __slots__ = '_bean', '_registered', '_beaninfo', '_logger',
+    __slots__ = '_bean', '_registered', '_name', '_beaninfo', '_logger',
 
     # Default property value type
     DEFAULT_PROPERTY_TYPE = java.lang.String
@@ -422,6 +422,7 @@ class MBeanAdapter(DynamicMBean, object):
         self._bean = bean
 
         self._registered = False
+        self._name = None
         self._beaninfo = None
 
         self._logger = logging.getLogger('mbeanadapter')
@@ -439,9 +440,29 @@ class MBeanAdapter(DynamicMBean, object):
 
         self._logger = logging.getLogger('mbeanadapter.%s' % name)
 
+        self._logger.debug('Registering adapter')
+
         server = ManagementFactory.getPlatformMBeanServer()
-        name = ObjectName(name)
-        server.registerMBean(self, name)
+        self._name = ObjectName(name)
+        server.registerMBean(self, self._name)
+
+        self._registered = True
+
+    @synchronised
+    def unregister(self):
+        '''Unregister the bean from JMX'''
+        if not self._registered:
+            raise RuntimeError('Adapter not registered')
+
+        assert self._name
+
+        self._logger.debug('Unregistering adapter')
+
+        server = ManagementFactory.getPlatformMBeanServer()
+        server.unregisterMBean(self._name)
+
+        self._name = None
+        self._registered = False
 
     # Private stuff
     @property
@@ -731,10 +752,12 @@ class DemoMBean(object):
 def main():
     '''Expose the demo MBean and wait for termination'''
     bean = DemoMBean(u'demo', 123, True)
-    MBeanAdapter(bean).register('JythonMX:name=demo')
+    adapter = MBeanAdapter(bean)
+    adapter.register('JythonMX:name=demo')
     print
     raw_input('Press return to quit\n')
     print
+    adapter.unregister()
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
