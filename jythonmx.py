@@ -37,7 +37,7 @@ __version__ = 0, 0, 1
 __license__ = 'GNU Lesser General Public License version 2.1'
 __docformat__ = 'restructuredtext en'
 
-__all__ = 'returns', 'args', 'TypedProperty', 'MBeanAdapter',
+__all__ = 'returns', 'args', 'TypedProperty', 'MBeanAdapter', 'Array',
 
 import sys
 import types
