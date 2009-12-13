@@ -280,6 +280,8 @@ def test_array():
     # TODO Test array coercion
 
 
+# TODO This is not correct, the returned function is locked by a global lock
+# (for all instances), not instance-specific
 def synchronised(fun):
     '''Decorator to add a lock around a function
 
