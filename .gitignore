@@ -1,3 +1,4 @@
+*.pyc
 *.bak
 *.class
 *.swp
@@ -5,3 +6,5 @@
 MANIFEST
 build/
 dist/
+
+doc/api/

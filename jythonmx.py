@@ -25,10 +25,11 @@
 :requires: Jython_ 2.5
 :version: 0.0.1
 
-:license: GNU Lesser General Public License version 2.1
+:license: `GNU Lesser General Public License version 2.1`_
 :copyright: |copy| 2009 Nicolas Trangez
 
 .. _Jython: http://www.jython.org
+.. _GNU Lesser General Public License version 2.1: http://www.gnu.org/licenses/lgpl-2.1.txt
 .. |copy| unicode:: 0xA9 .. copyright sign
 '''
 
@@ -92,26 +93,29 @@ def tag_decorator(attrname, modifier=None):
     tag_10
 
     :param attrname: name of the attribute to store the arguments
-    :type attrname: str
+    :type attrname: `str`
     :param modifier: modification function to modify the arguments
-    :type modifier: callable
+    :type modifier: `callable`
+
+    :return: a function decorator
+    :rtype: `callable`
     '''
     def decorator(*args_):
         '''
         Set decorator arguments as an attribute on the decorated function
 
         :return: decorator function
-        :rtype: callable
+        :rtype: `callable`
         '''
         def tagger(fun):
             '''
             Set decorator arguments as an attribute on the given function
 
             :param fun: function to decorate
-            :type fun: callable
+            :type fun: `callable`
 
             :return: decorated function
-            :rtype: callable
+            :rtype: `callable`
             '''
             modified_args = args_ if not modifier else modifier(*args_)
             setattr(fun, attrname, modified_args)
@@ -129,7 +133,7 @@ Define the return type of a method
 '''.strip()
 
 def test_returns():
-    '''Test @returns behaviour'''
+    '''Test `returns` behaviour'''
     @returns(java.lang.String)
     def f(): #pylint: disable-msg=C0111
         pass
@@ -146,7 +150,7 @@ can be just a type, or a tuple of a type and a description of the argument.
 '''.strip()
 
 def test_args():
-    '''Test @args behaviour'''
+    '''Test `args` behaviour'''
     #pylint: disable-msg=C0111
     @args(
         (java.lang.String, 'Name'),
@@ -165,7 +169,7 @@ attrsetter = lambda attr: lambda self, value: setattr(self, attr, value)
 #pylint: enable-msg=E0601
 
 def test_attrsetter():
-    '''Test attrsetter'''
+    '''Test `attrsetter`'''
     class C(object): #pylint: disable-msg=C0111
         def __init__(self, i): #pylint: disable-msg=C0111
             self._i = i
@@ -183,7 +187,7 @@ def test_attrsetter():
 classname = lambda cls: '%s.%s' % (cls.__module__, cls.__name__)
 
 def test_classname():
-    '''Test classname'''
+    '''Test `classname`'''
     assert classname(java.lang.String) == 'java.lang.String'
 
 
@@ -202,17 +206,17 @@ def test_format_docstring():
 
 class TypedProperty(property):
     '''
-    A descriptor, similar to the builtin property, which also takes a type
+    A descriptor, similar to the builtin `property`, which also takes a type
     definition
     '''
     def __init__(self, type_, *args_, **kwargs):
-        '''Initialize a TypedProperties
+        '''Initialize a `TypedProperty`
 
-        All *args_ and **kwargs are passed as-is to the builtin property
-        constructor.
+        All ``*args_`` and ``**kwargs`` are passed as-is to the builtin
+        `property` constructor.
 
-        :param type_: type of the property value
-        :type type_: type
+        :param type\_: type of the property value
+        :type type\_: `type`
         '''
         property.__init__(self, *args_, **kwargs)
         self._type = type_
@@ -230,7 +234,7 @@ class TypedProperty(property):
                     doc='Type of the property value')
 
 def test_typed_property():
-    '''Test TypedProperty'''
+    '''Test `TypedProperty`'''
     getter = operator.attrgetter('_')
     setter = attrsetter('_')
 
@@ -249,8 +253,8 @@ class Array(object):
     def __init__(self, type_):
         '''Initialize a new array representation
 
-        :param type_: type contained in the array
-        :type type_: type
+        :param type\_: type contained in the array
+        :type type\_: `type`
         '''
         self._type = type_
 
@@ -260,10 +264,10 @@ class Array(object):
         This acts just like the constructor of a normal Java type definition.
 
         :param values: values to coerce
-        :type values: iterable
+        :type values: ``iterable``
 
         :return: Java array containing all values
-        :rtype: jarray.array
+        :rtype: ``jarray.array``
         '''
         return jarray.array(tuple(self._type(value) for value in values),
                             self._type)
@@ -296,12 +300,12 @@ class NotificationTrigger(object):
     def __call__(self, message=None, userData=None):
         '''Emit notification
 
-        Note: both arguments will be coerced into java.lang.String.
+        Note: both arguments will be coerced into ``java.lang.String``.
 
         :param message: notification message
-        :type message: str
-        :param userData: notification userData
-        :type userData: str
+        :type message: `unicode`
+        :param userData: notification ``userData``
+        :type userData: `unicode`
         '''
         # If not all of these are set, we aren't registered yet. No-op.
         if not all((self._sendNotification, self._nextId, self._source, )):
@@ -360,13 +364,13 @@ signal = NotificationTrigger
 def synchronised(fun):
     '''Decorator to add a lock around a function
 
-    Think 'synchronised' in Java.
+    Think ``synchronised`` in Java.
 
     :param fun: function to decorate
-    :type fun: callable
+    :type fun: `callable`
 
     :return: decorated function
-    :rtype: callable
+    :rtype: `callable`
     '''
     lock = threading.Lock()
 
@@ -381,7 +385,7 @@ def synchronised(fun):
     return _wrapped
 
 def test_synchronised():
-    '''Test @synchronised'''
+    '''Test `synchronised`'''
     import time
 
     @synchronised
@@ -411,18 +415,18 @@ list_attributes = lambda obj: itertools.imap(
 list_attributes.__doc__ = '''
 List all public, non-internal attributes of an object
 
-This function yields all (name, attribute) pairs for all attributes on the
+This function yields all ``(name, attribute)`` pairs for all attributes on the
 given object whose name doesn't start with an underscore.
 
 :param obj: object to inspect
-:type obj: object
+:type obj: `object`
 
-:return: (name, attribute) pairs of all public attributes on the object
-:rtype: iterable
+:return: ``(name, attribute)`` pairs of all public attributes on the object
+:rtype: ``iterable<tuple<str, object>>``
 '''.strip()
 
 def test_list_attributes():
-    '''Test list_attributes'''
+    '''Test `list_attributes`'''
     class C(object): #pylint: disable-msg=C0111
         def __init__(self):
             pass
@@ -449,10 +453,10 @@ def logged(fun):
     logged using logging.exception, and re-raised.
 
     :param fun: function to decorate
-    :type fun: callable
+    :type fun: `callable`
 
     :return: decorated function
-    :rtype: callable
+    :rtype: `callable`
     '''
     @functools.wraps(fun)
     def _wrapped(*args_, **kwargs): #pylint: disable-msg=C0111
@@ -465,7 +469,7 @@ def logged(fun):
     return _wrapped
 
 def test_logged():
-    '''Make sure @logged passes through the exception'''
+    '''Make sure `logged` passes through the exception'''
     raised_exc = Exception('Hello world')
 
     @logged
@@ -492,10 +496,10 @@ class MBeanAdapter(NotificationBroadcasterSupport, DynamicMBean, object):
     DEFAULT_FUNCTION_RETURN_TYPE = java.lang.Void
 
     def __init__(self, bean):
-        '''Initialize a new MBeanAdapter
+        '''Initialize a new `MBeanAdapter`
 
         :param bean: instance to expose on JMX
-        :type bean: object
+        :type bean: `object`
         '''
         NotificationBroadcasterSupport.__init__(self)
 
@@ -513,10 +517,10 @@ class MBeanAdapter(NotificationBroadcasterSupport, DynamicMBean, object):
     # Public API
     @synchronised
     def register(self, name):
-        '''Register the bean in JMX using the given name
+        '''Register the bean in JMX using the given `name`
 
         :param name: name to register the bean as
-        :type name: str
+        :type name: `str`
         '''
         if self._registered:
             raise RuntimeError('Adapter already registered')
@@ -552,10 +556,10 @@ class MBeanAdapter(NotificationBroadcasterSupport, DynamicMBean, object):
     @synchronised
     @logged
     def beaninfo(self): #pylint: disable-msg=R0912
-        '''Calculate the MBeanInfo of the bean
+        '''Calculate the ``MBeanInfo`` of the bean
 
-        :return: MBeanInfo object describing the MBean
-        :rtype: MBeanInfo
+        :return: ``MBeanInfo`` object describing the MBean
+        :rtype: ``MBeanInfo``
         '''
         # Short path
         if self._beaninfo:
@@ -659,11 +663,11 @@ class MBeanAdapter(NotificationBroadcasterSupport, DynamicMBean, object):
     @logged
     @synchronised
     def notificationinfo(self):
-        '''Calculate the MBeanNotificationInfo of the bean
+        '''Calculate the ``MBeanNotificationInfo`` of the bean
 
-        :return: MBeanNotificationInfo array describing the notifications
+        :return: ``MBeanNotificationInfo`` array describing the notifications
                  emitted by the MBean
-        :rtype: MBeanNotificationInfo[]
+        :rtype: ``tuple<MBeanNotificationInfo>``
         '''
         # Short path
         if self._notificationinfo:
@@ -697,6 +701,9 @@ class MBeanAdapter(NotificationBroadcasterSupport, DynamicMBean, object):
         '''
         Calculate and return a sequence number for notifications sent by the
         MBean
+
+        :return: sequence ID
+        :rtype: ``number``
         '''
         self._currentId += 1
         return self._currentId
@@ -704,10 +711,10 @@ class MBeanAdapter(NotificationBroadcasterSupport, DynamicMBean, object):
     # DynamicMBean implementation
     @logged
     def getMBeanInfo(self):
-        '''Retrieve MBeanInfo for the bean
+        '''Retrieve ``MBeanInfo`` for the bean
 
-        :return: MBeanInfo of the bean
-        :rtype: MBeanInfo
+        :return: ``MBeanInfo`` of the bean
+        :rtype: ``MBeanInfo``
         '''
         self._logger.debug('MBean info requested')
 
@@ -718,10 +725,10 @@ class MBeanAdapter(NotificationBroadcasterSupport, DynamicMBean, object):
         '''Get an attribute value from the bean
 
         :param name: attribute to retrieve
-        :type name: str
+        :type name: `str`
 
         :return: attribute value
-        :rtype: object
+        :rtype: `object`
         '''
         self._logger.debug('Attribute requested: %s', name)
 
@@ -748,10 +755,10 @@ class MBeanAdapter(NotificationBroadcasterSupport, DynamicMBean, object):
         '''Get multiple attributes at once
 
         :param names: attributes to retrieve
-        :type names: iterable
+        :type names: ``iterable<Attribute>``
 
         :return: requested attribute values, if available
-        :rtype: AttributeList
+        :rtype: ``AttributeList``
         '''
         self._logger.debug('Attributes requested: %s', names)
 
@@ -773,7 +780,7 @@ class MBeanAdapter(NotificationBroadcasterSupport, DynamicMBean, object):
         '''Set the value of an attribute
 
         :param attribute: attribute to set
-        :type attribute: Attribute
+        :type attribute: ``Attribute``
         '''
         self._logger.debug('Attribute set: %s = %s', attribute.name,
                            attribute.value)
@@ -784,7 +791,7 @@ class MBeanAdapter(NotificationBroadcasterSupport, DynamicMBean, object):
         '''Set multiple attributes at once
 
         :param attributes: attributes to set
-        :type attributes: iterable
+        :type attributes: ``iterable<Attribute>``
         '''
         map(self.setAttribute, attributes)
 
@@ -793,14 +800,14 @@ class MBeanAdapter(NotificationBroadcasterSupport, DynamicMBean, object):
         '''Invoke a method on the bean
 
         :param name: method to invoke
-        :type name: str
-        :param args_: arguments to pass to the method
-        :type args_: iterable
+        :type name: `str`
+        :param args\_: arguments to pass to the method
+        :type args\_: ``iterable<object>``
         :param sig: method signature
-        :type sig: iterable
+        :type sig: ``iterable<java.lang.String>``
 
         :return: method call result
-        :rtype: object
+        :rtype: `object`
         '''
         self._logger.debug('Invoke: %s(%s), sig=%s', name, args_, sig)
 
@@ -836,7 +843,7 @@ class MBeanAdapter(NotificationBroadcasterSupport, DynamicMBean, object):
         '''Retrieve info of all notifications emitted by the MBean
 
         :return: MBean notification info
-        :rtype: MBeanNotificationInfo[]
+        :rtype: ``tuple<MBeanNotificationInfo>``
         '''
         self._logger.debug('Notification info requested')
 
@@ -847,7 +854,7 @@ class MBeanAdapter(NotificationBroadcasterSupport, DynamicMBean, object):
         '''Emit a notification to all listeners
 
         :param notification: Notification to emit
-        :type notification: Notification
+        :type notification: ``Notification``
         '''
         self._logger.debug('Emit notification: %s', notification)
 
