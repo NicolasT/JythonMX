@@ -19,6 +19,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA  02110-1301  USA
 
+#pylint: disable-msg=C0301
 '''JythonMX, helpers to expose JMX data from Jython applications
 
 :author: Nicolas Trangez
@@ -32,6 +33,7 @@
 .. _GNU Lesser General Public License version 2.1: http://www.gnu.org/licenses/lgpl-2.1.txt
 .. |copy| unicode:: 0xA9 .. copyright sign
 '''
+#pylint: enable-msg=C0301
 
 __author__ = 'Nicolas Trangez <eikke eikke com>'
 __version__ = 0, 0, 1
